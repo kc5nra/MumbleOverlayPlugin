@@ -1,0 +1,19 @@
+﻿<Window x:Class="MumbleOverlayPlugin.MumbleOverlayConfigurationDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" Title="Sample Image Configuration" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Width="229" Height="151">
+    
+    <Border Height="95" Canvas.Left="10" Canvas.Top="10" Width="189">
+        <Grid Margin="0,0,-9,-9">
+            <Button x:Name="okButton" Content="OK" HorizontalAlignment="Left" Margin="114,73,0,0" VerticalAlignment="Top" Width="75" Click="okButton_Click" Height="22"/>
+            <Label Content="Width:" HorizontalAlignment="Left" VerticalAlignment="Top" Width="54" Height="26"/>
+            <Label Content="Height:" HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Width="54" Height="26"/>
+            <Button x:Name="cancelButton" Content="Cancel" HorizontalAlignment="Left" Margin="28,73,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="1.347,1.364" Click="cancelButton_Click" Height="22"/>
+            <TextBox x:Name="widthText" HorizontalAlignment="Left" Height="23" Margin="54,28,0,0" TextWrapping="Wrap" Text="1024" VerticalAlignment="Top" Width="120"/>
+            <TextBox x:Name="heightText" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="1024" VerticalAlignment="Top" Width="120" Margin="54,5,0,0"/>
+        </Grid>
+    </Border>
+    
+</Window>
