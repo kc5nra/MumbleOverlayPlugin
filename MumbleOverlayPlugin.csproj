@@ -57,7 +57,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CLRHostInterop\CLRHostInterop.vcxproj">
+    <ProjectReference Include="..\CLRHostPlugin\CLRHostInterop\CLRHostInterop.vcxproj">
       <Project>{18746141-1223-4fdf-bd6e-e7536ccade4f}</Project>
       <Name>CLRHost.Interop %28Visual Studio 2010%29</Name>
     </ProjectReference>

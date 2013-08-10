@@ -23,26 +23,41 @@ namespace MumbleOverlayPlugin
         {
             this.config = config;
 
-            overlayHook = new OverlayHook();
-            overlayHook.Start(1024, 1024);
-
             UpdateSettings();
         }
         
         override public void UpdateSettings()
         {
-            if (texture != null)
+            
+            UInt32 width = (UInt32)config.GetInt("width", 640);
+            UInt32 height = (UInt32)config.GetInt("height", 480);
+
+            Size.X = width;
+            Size.Y = height;
+
+            config.Parent.SetInt("cx", (Int32)width);
+            config.Parent.SetInt("cy", (Int32)height);
+
+            lock (textureLock)
             {
-                texture.Dispose();
-                texture = null;
+                if (texture != null)
+                {
+                    texture.Dispose();
+                    texture = null;
+                }
+
+                texture = GS.CreateTexture(width, height, GSColorFormat.GS_BGRA, null, false, false);
             }
 
-            texture = GS.CreateTexture(1024, 1024, GSColorFormat.GS_BGRA, null, false, false);
-
-            overlayHook.UpdateSize(1024, 1024);
-
-            Size.X = 1024;
-            Size.Y = 1024;
+            if (overlayHook == null)
+            {
+                overlayHook = new OverlayHook();
+                overlayHook.Start(width, height);
+            }
+            else
+            {
+                overlayHook.UpdateSize(width, height);
+            }
         }
 
         override public void Render(float x, float y, float width, float height)

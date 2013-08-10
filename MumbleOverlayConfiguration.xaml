@@ -3,17 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             mc:Ignorable="d" Title="Sample Image Configuration" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Width="229" Height="151">
-    
-    <Border Height="95" Canvas.Left="10" Canvas.Top="10" Width="189">
-        <Grid Margin="0,0,-9,-9">
-            <Button x:Name="okButton" Content="OK" HorizontalAlignment="Left" Margin="114,73,0,0" VerticalAlignment="Top" Width="75" Click="okButton_Click" Height="22"/>
-            <Label Content="Width:" HorizontalAlignment="Left" VerticalAlignment="Top" Width="54" Height="26"/>
-            <Label Content="Height:" HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Width="54" Height="26"/>
-            <Button x:Name="cancelButton" Content="Cancel" HorizontalAlignment="Left" Margin="28,73,0,0" VerticalAlignment="Top" Width="75" RenderTransformOrigin="1.347,1.364" Click="cancelButton_Click" Height="22"/>
-            <TextBox x:Name="widthText" HorizontalAlignment="Left" Height="23" Margin="54,28,0,0" TextWrapping="Wrap" Text="1024" VerticalAlignment="Top" Width="120"/>
-            <TextBox x:Name="heightText" HorizontalAlignment="Left" Height="23" TextWrapping="Wrap" Text="1024" VerticalAlignment="Top" Width="120" Margin="54,5,0,0"/>
-        </Grid>
-    </Border>
-    
+             mc:Ignorable="d" Title="Mumble Overlay Config" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight">
+    <Grid Height="101" VerticalAlignment="Top" HorizontalAlignment="Left" Width="213">
+        <Label Content="Width:" HorizontalAlignment="Left" VerticalAlignment="Top" Width="54" Height="26" Margin="6,5,0,0"/>
+        <Label Content="Height:" HorizontalAlignment="Left" Margin="6,30,0,0" VerticalAlignment="Top" Width="54" Height="26"/>
+        <TextBox x:Name="widthText" Height="23" TextWrapping="Wrap" Text="1024" VerticalAlignment="Top" Margin="60,10,10,0"/>
+        <TextBox x:Name="heightText" Height="23" Margin="60,33,10,0" TextWrapping="Wrap" Text="1024" VerticalAlignment="Top"/>
+        <Button x:Name="cancelButton" Content="Cancel" Margin="0,61,90,0" RenderTransformOrigin="1.347,1.364" Click="cancelButton_Click" HorizontalAlignment="Right" Width="75" Height="22" VerticalAlignment="Top"/>
+        <Button x:Name="okButton" Content="OK" Margin="0,61,10,0" Click="okButton_Click" Height="22" VerticalAlignment="Top" HorizontalAlignment="Right" Width="71"/>
+    </Grid>
 </Window>

@@ -25,7 +25,6 @@ namespace MumbleOverlayPlugin
         public override bool ShowConfiguration(XElement data)
         {
             MumbleOverlayConfigurationDialog dialog = new MumbleOverlayConfigurationDialog(data);
-            dialog.Show();
             return dialog.ShowDialog().GetValueOrDefault(false);
         }
     }

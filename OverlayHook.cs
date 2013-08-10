@@ -91,11 +91,28 @@ namespace MumbleOverlayPlugin
         private UInt32 width;
         private UInt32 height;
 
+        private Object bitmapLock = new Object();
+
         public void UpdateSize(UInt32 width, UInt32 height)
         {
             this.width = width;
             this.height = height;
-            sharedBitmapData = new byte[width * height * 4];
+            
+            lock (bitmapLock)
+            {
+                sharedBitmapData = new byte[width * height * 4];
+            }
+        }
+
+        public void UpdateSharedMemoryKey(String sharedMemoryKey)
+        {
+            if (mappedOverlayStream != null)
+            {
+                mappedOverlayStream.Close();
+                mappedOverlayStream = null;
+            }
+
+            shmemKey = sharedMemoryKey;
         }
 
         public bool Fetch()
@@ -108,11 +125,14 @@ namespace MumbleOverlayPlugin
                 }
             }
 
-            int readByteLength = 0;
-            if ((readByteLength = mappedOverlayStream.Read(sharedBitmapData, 0, sharedBitmapData.Length)) != sharedBitmapData.Length)
+            lock (bitmapLock)
             {
-                API.Instance.Log("Shared memory read had unexpected length; Expected {0} got {1}", sharedBitmapData.Length, readByteLength);
-                return false;
+                int readByteLength = 0;
+                if ((readByteLength = mappedOverlayStream.Read(sharedBitmapData, 0, sharedBitmapData.Length)) != sharedBitmapData.Length)
+                {
+                    API.Instance.Log("Shared memory read had unexpected length; Expected {0} got {1}", sharedBitmapData.Length, readByteLength);
+                    return false;
+                }
             }
             mappedOverlayStream.Position = 0;
 
@@ -138,6 +158,12 @@ namespace MumbleOverlayPlugin
                 return false;
             }
 
+            if (mappedOverlayStream != null)
+            {
+                mappedOverlayStream.Close();
+                mappedOverlayStream = null;
+            }
+
             try
             {
                 MemoryMappedFile mappedOverlayBitmap = MemoryMappedFile.CreateOrOpen(shmemKey, width * height * 4);
@@ -157,10 +183,13 @@ namespace MumbleOverlayPlugin
             return true;
         }
 
-        public String SharedMemoryKey
+        public void Close()
         {
-            set { shmemKey = value; }
-            get { return shmemKey; }
+            if (mappedOverlayStream != null)
+            {
+                mappedOverlayStream.Close();
+                mappedOverlayStream = null;
+            }
         }
 
         public UInt32 Width 
@@ -175,7 +204,13 @@ namespace MumbleOverlayPlugin
 
         public byte[] BitmapData
         {
-            get { return sharedBitmapData; }
+            get 
+            {
+                lock (bitmapLock)
+                {
+                    return sharedBitmapData;
+                }
+            }
         }
     }
 
@@ -191,73 +226,101 @@ namespace MumbleOverlayPlugin
         private UInt32 frameCount;
         private UInt32 lastFpsUpdate;
 
+        private bool isConnected;
+
         public OverlayHook()
         {
             buffer = new OverlayMsgBuffer();
             bitmap = new SharedOverlayBitmap();
             stopwatch = new Stopwatch();
+            isConnected = false;
         }
+
+        public delegate void StartDelegate();
 
         public void Start(UInt32 width, UInt32 height)
         {
-            if (overlayPipe != null && overlayPipe.IsConnected)
+            Thread startThread = new Thread(new ThreadStart(() =>
             {
-                return;
-            }
+                if (overlayPipe != null && overlayPipe.IsConnected)
+                {
+                    return;
+                }
 
-            overlayPipe = new NamedPipeClientStream(".", "MumbleOverlayPipe", PipeDirection.InOut, PipeOptions.Asynchronous);
-            try {
-                overlayPipe.Connect(5000);
-            } catch(TimeoutException e) {
-                API.Instance.Log("Timeout connecting to named pipe \\\\.\\MumbleOverlayPipe; {0}", e.Message);
-                return;
-            }
+                overlayPipe = new NamedPipeClientStream(".", "MumbleOverlayPipe", PipeDirection.InOut, PipeOptions.Asynchronous);
+                try
+                {
+                    overlayPipe.Connect(5000);
+                }
+                catch (TimeoutException e)
+                {
+                    API.Instance.Log("Timeout connecting to named pipe \\\\.\\MumbleOverlayPipe; {0}", e.Message);
+                    return;
+                }
 
-            OverlayMsgPid pid = new OverlayMsgPid();
-            pid.processId = (UInt32)Process.GetCurrentProcess().Id;
-            
-            buffer.writeTo(overlayPipe, OverlayMsgType.ProcessId, pid);
+                OverlayMsgPid pid = new OverlayMsgPid();
+                pid.processId = (UInt32)Process.GetCurrentProcess().Id;
 
-            UpdateSize(width, height);
+                buffer.writeTo(overlayPipe, OverlayMsgType.ProcessId, pid);
 
-            stopwatch.Start();
+                stopwatch.Start();
 
-            overlayHookThread = new Thread(new ThreadStart(WaitForRead));
-            overlayHookThread.Start();
+                overlayHookThread = new Thread(new ThreadStart(WaitForRead));
+                overlayHookThread.Name = "OverlayHookPipeListener";
+                overlayHookThread.Start();
+
+                isConnected = true;
+
+                UpdateSize(width, height);
+
+            }));
+
+            startThread.Name = "OverlayHookStarter";
+            startThread.Start();
         }
 
         public void Stop()
         {
-            if (overlayPipe != null)
+            if (overlayPipe != null && isConnected)
             {
                 overlayPipe.Close();
             }
 
-            overlayHookThread.Abort();
-
-            Stopwatch terminateCountdown = new Stopwatch();
-            terminateCountdown.Start();
-            while (overlayHookThread.IsAlive)
+            if (overlayHookThread != null)
             {
-                if (terminateCountdown.ElapsedMilliseconds > 2000)
+                overlayHookThread.Abort();
+
+                Stopwatch terminateCountdown = new Stopwatch();
+                terminateCountdown.Start();
+                while (overlayHookThread.IsAlive)
                 {
-                    API.Instance.Log("Overlay hook thread unable to be terminated, 2000ms timeout exceeded; Giving up");
-                    break;
+                    if (terminateCountdown.ElapsedMilliseconds > 2000)
+                    {
+                        API.Instance.Log("Overlay hook thread unable to be terminated, 2000ms timeout exceeded; Giving up");
+                        break;
+                    }
                 }
+            }
+
+            if (bitmap != null)
+            {
+                bitmap.Close();
+                bitmap = null;
             }
         }
 
         public void UpdateSize(UInt32 width, UInt32 height)
         {
-
             bitmap.UpdateSize(width, height);
-            
-            
+                        
             OverlayMsgInit init = new OverlayMsgInit();
             init.width = width;
             init.height = height;
 
-            buffer.writeTo(overlayPipe, OverlayMsgType.Init, init);
+            if (isConnected)
+            {
+                buffer.writeTo(overlayPipe, OverlayMsgType.Init, init);
+            }
         }
 
         public void Draw(Texture texture)
@@ -292,7 +355,7 @@ namespace MumbleOverlayPlugin
 
                                 if (shmemKey != null)
                                 {
-                                    bitmap.SharedMemoryKey = shmemKey;
+                                    bitmap.UpdateSharedMemoryKey(shmemKey);
                                 }
                                 else
                                 {
